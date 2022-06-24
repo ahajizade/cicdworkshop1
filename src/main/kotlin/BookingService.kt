@@ -1,4 +1,5 @@
-import java.util.UUID
+import java.util.*
+import java.util.concurrent.TimeUnit
 
 interface BookingService {
     fun book(
@@ -8,6 +9,7 @@ interface BookingService {
     ): Meeting
 
     fun isAvailable(period: Period): Boolean
+    fun suggestNextPeriod(period: Period): Period
 }
 
 class BookingServiceImpl(
@@ -37,6 +39,26 @@ class BookingServiceImpl(
         return localDataSource.getMeetings().isEmpty() || localDataSource.getMeetings().all { periodCompare ->
             timeManager.overlaps(periodCompare.period, period).not()
         }
+    }
+    override fun suggestNextPeriod(period: Period): Period {
+        var newStartTime = period.startTime.time
+        val endLimit = timeManager.endOfWorkDay(period.startTime).time - period.unit.toMillis(period.duration)
+
+        while (newStartTime < endLimit) {
+            newStartTime += TimeUnit.MINUTES.toMillis(5) // skip each 5 minutes
+
+            val newPeriod =  Period(
+                startTime = Date(newStartTime),
+                duration = period.duration,
+                unit = period.unit
+            )
+
+            if (isAvailable(newPeriod)) {
+                return newPeriod
+            }
+        }
+
+        throw NotAvailableTimeSlotException
     }
 }
 
