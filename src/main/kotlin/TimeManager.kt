@@ -14,6 +14,7 @@ data class Period(
 interface TimeManager {
     fun overlaps(period1: Period, period2: Period): Boolean
     fun getDate(str: String, format: String): Date
+    fun endOfWorkDay(date: Date): Date
 }
 
 class TimeManagerImpl : TimeManager {
@@ -25,4 +26,11 @@ class TimeManagerImpl : TimeManager {
     override fun getDate(str: String, format: String): Date {
         return SimpleDateFormat(format).parse(str)
     }
+    override fun endOfWorkDay(date: Date): Date {
+        val dateFormat = SimpleDateFormat("dd.MM.yyyy")
+        val strDate: String = dateFormat.format(date)
+        val endDateTime = "${strDate}/18:00"
+        return getDate(endDateTime, format = "dd.MM.yyyy/HH:mm")
+    }
 }
+
